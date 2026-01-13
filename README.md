@@ -10,7 +10,7 @@ Key topics: `expense manager`, `personal finance`, `budgeting`, `expense tracker
 
 ## Quick demo
 
-![WealthPulse screenshot](.github/social_preview.svg)
+![WealthPulse screenshot](.github/social_preview.png)
 
 ---
 
