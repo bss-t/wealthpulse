@@ -56,9 +56,6 @@ Open http://localhost:5000
 
 ---
 
-## Documentation
-See the docs: `https://<your-gh-username>.github.io/wealthpulse/` (will be enabled via GitHub Pages). Docs live under `/docs` in this repo.
-
 ## Contributing
 Contributions welcome! Please read `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` (coming soon).
 
