@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Categories{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <div>
+        <h2><i class="fas fa-tags text-primary"></i> Expense Categories</h2>
+        <p class="text-muted mb-0">Organize your expenses with custom categories</p>
+    </div>
+    <a href="{{ url_for('main.add_category') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Category
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Categories Grid -->
+<div class="row">
+    {% for category in categories %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm category-card">
+            <div class="card-header bg-{{ category.color }} text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="{{ category.icon }}"></i> {{ category.name }}
+                    </h6>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-light" type="button" 
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('main.edit_category', id=category.id) }}">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('expenses.list_expenses', category=category.id) }}">
+                                    <i class="fas fa-list"></i> View Expenses
+                                </a>
+                            </li>
+                            {% if not category.is_default %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="POST" action="{{ url_for('main.delete_category', id=category.id) }}" 
+                                      class="d-inline" onsubmit="return confirm('Are you sure? This will move all expenses in this category to \'Other\'.')">
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if category.description %}
+                <p class="text-muted small">{{ category.description }}</p>
+                {% endif %}
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h5 class="text-primary">{{ get_currency_symbol() }}{{ "%.0f"|format(category.total_spent) }}</h5>
+                        <small class="text-muted">Total Spent</small>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-info">{{ category.expense_count }}</h5>
+                        <small class="text-muted">Expenses</small>
+                    </div>
+                </div>
+                
+                <!-- Budget Progress -->
+                {% set budget = category.current_budget %}
+                {% if budget %}
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted">Monthly Budget</small>
+                        <small class="fw-bold">{{ "%.0f"|format((budget.spent / budget.amount * 100) if budget.amount > 0 else 0) }}%</small>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        {% set percentage = (budget.spent / budget.amount * 100) if budget.amount > 0 else 0 %}
+                        <div class="progress-bar {% if percentage > 90 %}bg-danger{% elif percentage > 75 %}bg-warning{% else %}bg-success{% endif %}" 
+                             style="width: {{ [percentage, 100]|min }}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1">
+                        <small class="text-muted">{{ get_currency_symbol() }}{{ "%.0f"|format(budget.spent) }} spent</small>
+                        <small class="text-muted">{{ get_currency_symbol() }}{{ "%.0f"|format(budget.amount) }} budget</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="mt-3 text-center">
+                    <a href="{{ url_for('main.add_budget', category_id=category.id) }}" 
+                       class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-plus"></i> Set Budget
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-light">
+                <div class="btn-group w-100">
+                    <a href="{{ url_for('expenses.add_expense') }}?category={{ category.id }}" 
+                       class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Add Expense
+                    </a>
+                    <a href="{{ url_for('main.edit_category', id=category.id) }}" 
+                       class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-edit"></i> Edit
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    
+    {% if not categories %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-tags fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No Categories Found</h4>
+                <p class="text-muted">Create your first category to start organizing your expenses.</p>
+                <a href="{{ url_for('main.add_category') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create First Category
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Category Statistics -->
+{% if categories %}
+<div class="row mt-5">
+    <div class="col-12">
+        <h4 class="mb-3"><i class="fas fa-chart-bar text-info"></i> Category Overview</h4>
+    </div>
+    
+    <!-- Spending by Category Chart -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0">Spending by Category (This Month)</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="categoryChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Categories -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0">Top Categories</h6>
+            </div>
+            <div class="card-body">
+                {% for category in top_categories %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <span class="badge bg-{{ category.color }}">
+                            <i class="{{ category.icon }}"></i> {{ category.name }}
+                        </span>
+                        <br>
+                        <small class="text-muted">{{ category.expense_count }} expenses</small>
+                    </div>
+                    <div class="text-end">
+                        <strong>{{ get_currency_symbol() }}{{ "%.0f"|format(category.total_spent) }}</strong>
+                        {% if category.current_budget %}
+                        <br><small class="text-muted">of {{ get_currency_symbol() }}{{ "%.0f"|format(category.current_budget.amount) }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not top_categories %}
+                <p class="text-muted text-center">No expenses this month</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.category-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.category-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1) !important;
+}
+
+.progress {
+    background-color: rgba(255,255,255,0.3);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Category spending chart
+    const categoryChartCtx = document.getElementById('categoryChart');
+    if (categoryChartCtx) {
+        const categoryData = {
+            labels: [{% for category in categories %}'{{ category.name }}'{{ ',' if not loop.last }}{% endfor %}],
+            datasets: [{
+                data: [{% for category in categories %}{{ category.total_spent }}{{ ',' if not loop.last }}{% endfor %}],
+                backgroundColor: [
+                    {% for category in categories %}
+                    '{% if category.color == "primary" %}#0d6efd{% elif category.color == "success" %}#198754{% elif category.color == "warning" %}#ffc107{% elif category.color == "danger" %}#dc3545{% elif category.color == "info" %}#0dcaf0{% elif category.color == "secondary" %}#6c757d{% elif category.color == "dark" %}#212529{% else %}#f8f9fa{% endif %}'{{ ',' if not loop.last }}
+                    {% endfor %}
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        };
+        
+        new Chart(categoryChartCtx, {
+            type: 'doughnut',
+            data: categoryData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${label}: {{ get_currency_symbol() }}${value.toFixed(0)} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Auto-update category colors in dropdowns
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        menu.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Account - WealthPulse{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Delete Account</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger" role="alert">
+                        <h5 class="alert-heading"><strong>Warning: This action cannot be undone!</strong></h5>
+                        <hr>
+                        <p class="mb-0">Deleting your account will permanently remove:</p>
+                        <ul class="mt-2">
+                            <li>All your expenses</li>
+                            <li>All your investments</li>
+                            <li>All your categories</li>
+                            <li>All your budgets</li>
+                            <li>All your payment methods</li>
+                            <li>Your user account</li>
+                        </ul>
+                    </div>
+
+                    <p class="text-muted">
+                        Are you absolutely sure you want to delete your account? This action is permanent and cannot be reversed.
+                    </p>
+
+                    <form method="POST" action="{{ url_for('main.delete_account') }}" id="deleteForm">
+                        {{ form.hidden_tag() }}
+                        <div class="form-group mb-3">
+                            {{ form.confirmation.label(class="form-label") }}
+                            {{ form.confirmation(class="form-control", id="confirmation") }}
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('main.profile') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-danger", id="deleteBtn", disabled=True) }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('confirmation').addEventListener('input', function(e) {
+    const deleteBtn = document.getElementById('deleteBtn');
+    const value = e.target.value.trim();
+    if (value === 'DELETE') {
+        deleteBtn.disabled = false;
+    } else {
+        deleteBtn.disabled = true;
+    }
+});
+
+document.getElementById('deleteForm').addEventListener('submit', function(e) {
+    const confirmation = document.getElementById('confirmation').value.trim();
+    if (confirmation !== 'DELETE') {
+        e.preventDefault();
+        alert('Please type DELETE to confirm account deletion.');
+        return false;
+    }
+    if (!confirm('Last chance! Are you absolutely sure you want to delete your account?')) {
+        e.preventDefault();
+        return false;
+    }
+    return true;
+});
+</script>
+{% endblock %}

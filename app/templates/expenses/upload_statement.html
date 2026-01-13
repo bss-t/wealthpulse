@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-upload"></i> Upload Bank/Credit Card Statement
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>How it works:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Upload your bank or credit card statement in PDF format</li>
+                        <li>The system will automatically extract transactions</li>
+                        <li>All transactions will be added as expenses with your selected default category and payment method</li>
+                        <li>Duplicate transactions (same date and amount) will be skipped automatically</li>
+                        <li>You can edit individual transactions later from the expenses list</li>
+                    </ul>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-4">
+                        {{ form.statement_file.label(class="form-label") }}
+                        {{ form.statement_file(class="form-control" + (" is-invalid" if form.statement_file.errors else ""), accept=".pdf") }}
+                        {% if form.statement_file.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.statement_file.errors[0] }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-file-pdf text-danger"></i> Only PDF files are supported
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.pdf_password.label(class="form-label") }}
+                        <div class="input-group">
+                            {{ form.pdf_password(class="form-control" + (" is-invalid" if form.pdf_password.errors else ""), type="password", placeholder="Leave blank if not password protected") }}
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
+                                <i class="fas fa-eye" id="toggleIcon"></i>
+                            </button>
+                        </div>
+                        {% if form.pdf_password.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.pdf_password.errors[0] }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <i class="fas fa-lock"></i> Most bank statements use last 4 digits of card number or date of birth (DDMMYYYY)
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.default_category_id.label(class="form-label") }}
+                            {{ form.default_category_id(class="form-select" + (" is-invalid" if form.default_category_id.errors else "")) }}
+                            {% if form.default_category_id.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.default_category_id.errors[0] }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                All imported transactions will use this category. You can change it later for individual transactions.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            {{ form.default_payment_method.label(class="form-label") }}
+                            {{ form.default_payment_method(class="form-select" + (" is-invalid" if form.default_payment_method.errors else "")) }}
+                            {% if form.default_payment_method.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.default_payment_method.errors[0] }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                All imported transactions will use this payment method.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Note:</strong> The parser works best with standard bank/credit card statements. 
+                        Transaction formats vary by institution, so some manual review may be needed after import.
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                        <a href="{{ url_for('expenses.list_expenses') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Expenses
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Section -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-question-circle"></i> Supported Statement Formats</h6>
+            </div>
+            <div class="card-body">
+                <p>The parser can extract transactions from statements that include:</p>
+                <ul>
+                    <li><strong>Date:</strong> DD/MM/YYYY, DD-MM-YYYY, YYYY-MM-DD, DD-MMM-YYYY formats</li>
+                    <li><strong>Description:</strong> Transaction merchant/description text</li>
+                    <li><strong>Amount:</strong> Numeric values with optional commas (e.g., 1,234.56)</li>
+                </ul>
+                <p class="mb-0">
+                    <strong>Tip:</strong> After importing, review the transactions list and update categories 
+                    for more accurate expense tracking.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword() {
+    const passwordField = document.querySelector('input[name="pdf_password"]');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    }
+}
+</script>
+{% endblock %}

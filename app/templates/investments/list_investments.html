@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="fas fa-chart-line"></i> My Investments</h2>
+        <p class="text-muted">Track and manage your investment portfolio</p>
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('investments.add_investment') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Investment
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-hand-holding-usd fa-2x mb-2"></i>
+                <h4>{{ get_currency_symbol() }}{{ "%.2f"|format(total_invested) }}</h4>
+                <p class="mb-0">Total Invested</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-coins fa-2x mb-2"></i>
+                <h4>{{ get_currency_symbol() }}{{ "%.2f"|format(total_current_value) }}</h4>
+                <p class="mb-0">Current Value</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card {% if total_returns >= 0 %}bg-info{% else %}bg-danger{% endif %} text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                <h4>{{ get_currency_symbol() }}{{ "%.2f"|format(total_returns) }}</h4>
+                <p class="mb-0">Total Returns</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-percentage fa-2x mb-2"></i>
+                <h4>{{ "%.2f"|format(return_percentage) }}%</h4>
+                <p class="mb-0">Overall Return</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Investments by Type -->
+{% if type_summary %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-pie-chart"></i> Investment Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for type, amount, count in type_summary %}
+                    <div class="col-md-4 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ type }}</strong>
+                            <span>{{ count }} investment{{ 's' if count > 1 else '' }}</span>
+                        </div>
+                        <h5 class="text-primary">{{ get_currency_symbol() }}{{ "%.2f"|format(amount) }}</h5>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar" style="width: {{ (amount / total_invested * 100) if total_invested > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Investments Table -->
+{% if investments %}
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list"></i> All Investments</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Invested</th>
+                        <th>Current Value</th>
+                        <th>Returns</th>
+                        <th>Return %</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for investment in investments %}
+                    <tr>
+                        <td><strong>{{ investment.name }}</strong></td>
+                        <td><span class="badge bg-secondary">{{ investment.type.name }}</span></td>
+                        <td>{{ get_currency_symbol() }}{{ "%.2f"|format(investment.amount) }}</td>
+                        <td>{{ get_currency_symbol() }}{{ "%.2f"|format(investment.current_value or investment.amount) }}</td>
+                        <td class="{% if investment.get_profit_loss() >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ get_currency_symbol() }}{{ "%.2f"|format(investment.get_profit_loss()) }}
+                        </td>
+                        <td class="{% if investment.get_return_percentage() >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ "%.2f"|format(investment.get_return_percentage()) }}%
+                        </td>
+                        <td>{{ investment.investment_date.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('investments.edit_investment', id=investment.id) }}" 
+                                   class="btn btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('investments.delete_investment', id=investment.id) }}" 
+                                      class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                            onclick="return confirm('Are you sure you want to delete this investment?')" 
+                                            title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% if investment.notes %}
+                    <tr>
+                        <td colspan="8" class="text-muted small">
+                            <i class="fas fa-sticky-note"></i> {{ investment.notes }}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> No investments found. 
+    <a href="{{ url_for('investments.add_investment') }}">Add your first investment</a>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+{% endblock %}

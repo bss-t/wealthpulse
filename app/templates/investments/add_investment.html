@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2><i class="fas fa-plus-circle text-primary"></i> Add New Investment</h2>
+        <p class="text-muted">Record a new investment</p>
+    </div>
+    <div class="col-auto">
+        <a href="{{ url_for('investments.list_investments') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Investments
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header" style="background-color: #1a202c;">
+                <h5 class="mb-0">Investment Details</h5>
+            </div>
+            <div class="card-body" style="background-color: #1a202c;">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">{{ form.name.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            {{ form.investment_type_id.label(class="form-label") }}
+                            {{ form.investment_type_id(class="form-select" + (" is-invalid" if form.investment_type_id.errors else "")) }}
+                            {% if form.investment_type_id.errors %}
+                                <div class="invalid-feedback">{{ form.investment_type_id.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.amount.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">{{ get_currency_symbol() }}</span>
+                                {{ form.amount(class="form-control" + (" is-invalid" if form.amount.errors else "")) }}
+                                {% if form.amount.errors %}
+                                    <div class="invalid-feedback">{{ form.amount.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.investment_date.label(class="form-label") }}
+                            {{ form.investment_date(class="form-control" + (" is-invalid" if form.investment_date.errors else "")) }}
+                            {% if form.investment_date.errors %}
+                                <div class="invalid-feedback">{{ form.investment_date.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.expected_return.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.expected_return(class="form-control") }}
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <small class="form-text">Expected annual return percentage</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            {{ form.maturity_date.label(class="form-label") }}
+                            {{ form.maturity_date(class="form-control") }}
+                            <small class="form-text">Leave empty if no maturity date</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.current_value.label(class="form-label") }}
+                        <div class="input-group">
+                            <span class="input-group-text">{{ get_currency_symbol() }}</span>
+                            {{ form.current_value(class="form-control") }}
+                        </div>
+                        <small class="form-text">Current market value (leave empty if same as invested amount)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.notes.label(class="form-label") }}
+                        {{ form.notes(class="form-control", rows="3") }}
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('investments.list_investments') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header" style="background-color: #1a202c;">
+                <h6 class="mb-0"><i class="fas fa-info-circle"></i> Investment Tips</h6>
+            </div>
+            <div class="card-body" style="background-color: #1a202c;">
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Diversify your portfolio</li>
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Track returns regularly</li>
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Update current values monthly</li>
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Keep notes for reference</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

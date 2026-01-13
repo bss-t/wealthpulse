@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <div>
+        <h2><i class="fas fa-user text-primary"></i> My Profile</h2>
+        <p class="text-muted mb-0">Manage your account settings and preferences</p>
+    </div>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Profile Form -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-edit text-primary"></i> Profile Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <!-- Username -->
+                        <div class="col-md-6 mb-3">
+                            {{ form.username.label(class="form-label fw-bold") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                                {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
+                                {% if form.username.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.username.errors[0] }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="col-md-6 mb-3">
+                            {{ form.email.label(class="form-label fw-bold") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-envelope"></i>
+                                </span>
+                                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.email.errors[0] }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- First Name -->
+                        <div class="col-md-6 mb-3">
+                            {{ form.first_name.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-id-badge"></i>
+                                </span>
+                                {{ form.first_name(class="form-control") }}
+                            </div>
+                        </div>
+                        
+                        <!-- Last Name -->
+                        <div class="col-md-6 mb-3">
+                            {{ form.last_name.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-id-badge"></i>
+                                </span>
+                                {{ form.last_name(class="form-control") }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Change Password (Coming Soon) -->
+        <!-- Password change functionality will be added in a future update -->
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Account Statistics -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-chart-bar text-info"></i> Account Statistics
+                </h6>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-6">Member Since:</dt>
+                    <dd class="col-sm-6">{{ current_user.created_at.strftime('%B %Y') if current_user.created_at else 'N/A' }}</dd>
+                    
+                    <dt class="col-sm-6">Total Expenses:</dt>
+                    <dd class="col-sm-6">{{ user_stats.total_expenses }}</dd>
+                    
+                    <dt class="col-sm-6">Total Spent:</dt>
+                    <dd class="col-sm-6">{{ get_currency_symbol() }}{{ "%.2f"|format(user_stats.total_amount) }}</dd>
+                    
+                    <dt class="col-sm-6">Categories Used:</dt>
+                    <dd class="col-sm-6">{{ user_stats.categories_used }}</dd>
+                    
+                    <dt class="col-sm-6">Active Budgets:</dt>
+                    <dd class="col-sm-6">{{ user_stats.active_budgets }}</dd>
+                    
+                    <dt class="col-sm-6">Last Login:</dt>
+                    <dd class="col-sm-6">{{ current_user.last_login.strftime('%m/%d/%Y') if current_user.last_login else 'N/A' }}</dd>
+                </dl>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-clock text-secondary"></i> Recent Activity
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if recent_expenses %}
+                {% for expense in recent_expenses %}
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                    <div>
+                        <strong>{{ expense.title }}</strong><br>
+                        <small class="text-muted">
+                            <i class="fas fa-tag"></i> {{ expense.category.name }} • 
+                            <i class="fas fa-calendar"></i> {{ expense.date.strftime('%m/%d') }}
+                        </small>
+                    </div>
+                    <span class="fw-bold">{{ get_currency_symbol() }}{{ "%.0f"|format(expense.amount) }}</span>
+                </div>
+                {% endfor %}
+                <a href="{{ url_for('expenses.list_expenses') }}" class="btn btn-sm btn-outline-primary w-100 mt-2">
+                    View All Expenses
+                </a>
+                {% else %}
+                <p class="text-muted text-center">No recent expenses</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Account Actions -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-cog text-secondary"></i> Account Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('main.reports') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-chart-line"></i> View Reports
+                    </a>
+                    <a href="{{ url_for('expenses.ml_stats') }}" class="btn btn-outline-success">
+                        <i class="fas fa-robot"></i> ML Statistics
+                    </a>
+                    <a href="{{ url_for('expenses.find_duplicates') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-copy"></i> Find Duplicates
+                    </a>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-download"></i> Export Data
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="exportData('expenses'); return false;">
+                                <i class="fas fa-receipt"></i> Export Expenses
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportData('investments'); return false;">
+                                <i class="fas fa-chart-line"></i> Export Investments
+                            </a></li>
+                        </ul>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary" onclick="clearCache()">
+                        <i class="fas fa-refresh"></i> Clear Cache
+                    </button>
+                    <hr>
+                    <button type="button" class="btn btn-outline-danger" onclick="deleteAccount()">
+                        <i class="fas fa-trash"></i> Delete Account
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profile Tips -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-light">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-lightbulb text-warning"></i> Profile Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        Keep your email updated for notifications
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        Use a strong, unique password
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        Complete your profile for better experience
+                    </li>
+                    <li class="mb-0">
+                        <i class="fas fa-check text-success"></i>
+                        Review your account regularly
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const newPasswordInput = document.querySelector('input[name="new_password"]');
+    const strengthBar = document.getElementById('password-strength');
+    const strengthFeedback = document.getElementById('password-feedback');
+    
+    if (newPasswordInput && strengthBar) {
+        newPasswordInput.addEventListener('input', function() {
+            const password = this.value;
+            const strength = checkPasswordStrength(password);
+            
+            strengthBar.style.width = strength.percentage + '%';
+            strengthBar.className = 'progress-bar ' + strength.class;
+            strengthFeedback.textContent = strength.text;
+        });
+    }
+    
+    // Form validation
+    const profileForm = document.querySelector('form[method="POST"]:not([action])');
+    if (profileForm) {
+        profileForm.addEventListener('submit', function(e) {
+            const username = document.querySelector('input[name="username"]').value.trim();
+            const email = document.querySelector('input[name="email"]').value.trim();
+            
+            if (!username) {
+                e.preventDefault();
+                showNotification('Please enter a username', 'danger');
+                return;
+            }
+            
+            if (!email || !isValidEmail(email)) {
+                e.preventDefault();
+                showNotification('Please enter a valid email address', 'danger');
+                return;
+            }
+        });
+    }
+    
+    const passwordForm = document.querySelector('form[action*="change_password"]');
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', function(e) {
+            const currentPassword = document.querySelector('input[name="current_password"]').value;
+            const newPassword = document.querySelector('input[name="new_password"]').value;
+            const confirmPassword = document.querySelector('input[name="confirm_password"]').value;
+            
+            if (!currentPassword) {
+                e.preventDefault();
+                showNotification('Please enter your current password', 'danger');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                e.preventDefault();
+                showNotification('New password must be at least 6 characters long', 'danger');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                e.preventDefault();
+                showNotification('New passwords do not match', 'danger');
+                return;
+            }
+        });
+    }
+});
+
+function checkPasswordStrength(password) {
+    if (!password) {
+        return { percentage: 0, class: '', text: 'Enter a password' };
+    }
+    
+    let score = 0;
+    let feedback = [];
+    
+    // Length check
+    if (password.length >= 8) score += 25;
+    else feedback.push('at least 8 characters');
+    
+    // Uppercase check
+    if (/[A-Z]/.test(password)) score += 25;
+    else feedback.push('uppercase letter');
+    
+    // Lowercase check
+    if (/[a-z]/.test(password)) score += 25;
+    else feedback.push('lowercase letter');
+    
+    // Number or symbol check
+    if (/[0-9]/.test(password) || /[^A-Za-z0-9]/.test(password)) score += 25;
+    else feedback.push('number or symbol');
+    
+    let strength = 'Weak';
+    let className = 'bg-danger';
+    
+    if (score >= 75) {
+        strength = 'Strong';
+        className = 'bg-success';
+    } else if (score >= 50) {
+        strength = 'Good';
+        className = 'bg-info';
+    } else if (score >= 25) {
+        strength = 'Fair';
+        className = 'bg-warning';
+    }
+    
+    const text = feedback.length > 0 ? 
+                `${strength} - Add: ${feedback.join(', ')}` : 
+                `${strength} password`;
+    
+    return {
+        percentage: score,
+        class: className,
+        text: text
+    };
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function exportData(type = 'expenses') {
+    const typeText = type === 'investments' ? 'investment' : 'expense';
+    if (confirm(`This will download all your ${typeText} data in CSV format. Continue?`)) {
+        window.location.href = `/export_data?type=${type}`;
+    }
+}
+
+function clearCache() {
+    if (confirm('This will clear your browser cache for this application. Continue?')) {
+        localStorage.clear();
+        sessionStorage.clear();
+        showNotification('Cache cleared successfully', 'success');
+    }
+}
+
+function deleteAccount() {
+    window.location.href = '/delete_account';
+}
+
+function showNotification(message, type) {
+    if (window.ExpenseManager) {
+        window.ExpenseManager.showNotification(message, type);
+    } else {
+        alert(message);
+    }
+}
+</script>
+{% endblock %}

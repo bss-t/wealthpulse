@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+
+{% block title %}My Expenses{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <div>
+        <h2><i class="fas fa-receipt text-primary"></i> My Expenses</h2>
+        <p class="text-muted mb-0">Track and manage your spending</p>
+    </div>
+    <a href="{{ url_for('expenses.add_expense') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Expense
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-calendar-month fa-2x mb-2"></i>
+                <h4>{{ get_currency_symbol() }}{{ "%.2f"|format(monthly_total) }}</h4>
+                <p class="mb-0">This Month</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-calendar-week fa-2x mb-2"></i>
+                <h4>{{ get_currency_symbol() }}{{ "%.2f"|format(weekly_total) }}</h4>
+                <p class="mb-0">This Week</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-receipt fa-2x mb-2"></i>
+                <h4>{{ total_expenses }}</h4>
+                <p class="mb-0">Total Expenses</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-2x mb-2"></i>
+                <h4>{{ get_currency_symbol() }}{{ "%.2f"|format(avg_expense) }}</h4>
+                <p class="mb-0">Average</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" name="search" 
+                           value="{{ request.args.get('search', '') }}" 
+                           placeholder="Search expenses...">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Category</label>
+                <select class="form-select" name="category">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" 
+                            {{ 'selected' if request.args.get('category') == category.id|string else '' }}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">From Date</label>
+                <input type="date" class="form-control" name="date_from" 
+                       value="{{ request.args.get('date_from', '') }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">To Date</label>
+                <input type="date" class="form-control" name="date_to" 
+                       value="{{ request.args.get('date_to', '') }}">
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                <a href="{{ url_for('expenses.list_expenses') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Expenses List -->
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-list"></i> Expense List
+            {% if expenses.total > 0 %}
+                <span class="badge bg-secondary">{{ expenses.total }} total</span>
+            {% endif %}
+        </h5>
+        <div class="btn-group btn-group-sm">
+            <button type="button" class="btn btn-outline-secondary" id="list-view" data-view="list">
+                <i class="fas fa-list"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary active" id="card-view" data-view="card">
+                <i class="fas fa-th-large"></i>
+            </button>
+        </div>
+    </div>
+    
+    {% if expenses.items %}
+    <!-- Table View -->
+    <div id="table-container" class="card-body" style="display: none;">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>
+                            <a href="{{ url_for('expenses.list_expenses', sort_by='date', sort_order='asc' if sort_by == 'date' and sort_order == 'desc' else 'desc', page=request.args.get('page', 1), category=request.args.get('category'), search=request.args.get('search'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date')) }}" class="text-decoration-none" style="color: #e2e8f0;">
+                                Date
+                                {% if sort_by == 'date' %}
+                                    <i class="fas fa-sort-{{ 'down' if sort_order == 'desc' else 'up' }}"></i>
+                                {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('expenses.list_expenses', sort_by='title', sort_order='asc' if sort_by == 'title' and sort_order == 'desc' else 'desc', page=request.args.get('page', 1), category=request.args.get('category'), search=request.args.get('search'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date')) }}" class="text-decoration-none" style="color: #e2e8f0;">
+                                Title
+                                {% if sort_by == 'title' %}
+                                    <i class="fas fa-sort-{{ 'down' if sort_order == 'desc' else 'up' }}"></i>
+                                {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('expenses.list_expenses', sort_by='category', sort_order='asc' if sort_by == 'category' and sort_order == 'desc' else 'desc', page=request.args.get('page', 1), category=request.args.get('category'), search=request.args.get('search'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date')) }}" class="text-decoration-none" style="color: #e2e8f0;">
+                                Category
+                                {% if sort_by == 'category' %}
+                                    <i class="fas fa-sort-{{ 'down' if sort_order == 'desc' else 'up' }}"></i>
+                                {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('expenses.list_expenses', sort_by='amount', sort_order='asc' if sort_by == 'amount' and sort_order == 'desc' else 'desc', page=request.args.get('page', 1), category=request.args.get('category'), search=request.args.get('search'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date')) }}" class="text-decoration-none" style="color: #e2e8f0;">
+                                Amount
+                                {% if sort_by == 'amount' %}
+                                    <i class="fas fa-sort-{{ 'down' if sort_order == 'desc' else 'up' }}"></i>
+                                {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('expenses.list_expenses', sort_by='payment_method', sort_order='asc' if sort_by == 'payment_method' and sort_order == 'desc' else 'desc', page=request.args.get('page', 1), category=request.args.get('category'), search=request.args.get('search'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date')) }}" class="text-decoration-none" style="color: #e2e8f0;">
+                                Payment Method
+                                {% if sort_by == 'payment_method' %}
+                                    <i class="fas fa-sort-{{ 'down' if sort_order == 'desc' else 'up' }}"></i>
+                                {% else %}
+                                    <i class="fas fa-sort text-muted"></i>
+                                {% endif %}
+                            </a>
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in expenses.items %}
+                    <tr>
+                        <td>{{ expense.date.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <strong>{{ expense.title }}</strong>
+                            {% if expense.description %}
+                                <br><small class="text-muted">{{ expense.description[:50] }}{{ '...' if expense.description|length > 50 else '' }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ expense.category.color }}">
+                                <i class="{{ expense.category.icon }}"></i> {{ expense.category.name }}
+                            </span>
+                        </td>
+                        <td><strong>{{ get_currency_symbol() }}{{ "%.2f"|format(expense.amount) }}</strong></td>
+                        <td>
+                            <span class="badge bg-secondary">{{ expense.get_payment_method_name() }}</span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('expenses.edit_expense', id=expense.id) }}" 
+                                   class="btn btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if expense.receipt %}
+                                <a href="{{ url_for('expenses.view_receipt', id=expense.id) }}" 
+                                   class="btn btn-outline-info" title="View Receipt" target="_blank">
+                                    <i class="fas fa-file-image"></i>
+                                </a>
+                                {% endif %}
+                                <button type="button" class="btn btn-outline-danger" title="Delete"
+                                        onclick="if(confirm('Are you sure you want to delete this expense?')) { 
+                                            var form = document.createElement('form');
+                                            form.method = 'POST';
+                                            form.action = '{{ url_for('expenses.delete_expense', id=expense.id) }}';
+                                            document.body.appendChild(form);
+                                            form.submit();
+                                        }">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Card View -->
+    <div id="card-container" class="card-body">
+        <div class="row">
+            {% for expense in expenses.items %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card expense-card h-100 border-left-{{ expense.category.color }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-{{ expense.category.color }}">
+                                <i class="{{ expense.category.icon }}"></i> {{ expense.category.name }}
+                            </span>
+                            <small class="text-muted">{{ expense.date.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                        
+                        <h6 class="card-title">{{ expense.title }}</h6>
+                        {% if expense.description %}
+                        <p class="card-text text-muted small">{{ expense.description[:80] }}{{ '...' if expense.description|length > 80 else '' }}</p>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="text-primary mb-0">{{ get_currency_symbol() }}{{ "%.2f"|format(expense.amount) }}</h5>
+                            <small class="text-muted">{{ expense.get_payment_method_name() }}</small>
+                        </div>
+                        
+                        {% if expense.receipt %}
+                        <div class="mt-2">
+                            <i class="fas fa-paperclip text-info"></i>
+                            <small class="text-info">Has Receipt</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <div class="btn-group w-100" role="group">
+                            <a href="{{ url_for('expenses.edit_expense', id=expense.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            {% if expense.receipt %}
+                            <a href="{{ url_for('expenses.view_receipt', id=expense.id) }}" 
+                               class="btn btn-sm btn-outline-info" target="_blank">
+                                <i class="fas fa-file-image"></i>
+                            </a>
+                            {% endif %}
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    onclick="if(confirm('Are you sure you want to delete this expense?')) { 
+                                        var form = document.createElement('form');
+                                        form.method = 'POST';
+                                        form.action = '{{ url_for('expenses.delete_expense', id=expense.id) }}';
+                                        document.body.appendChild(form);
+                                        form.submit();
+                                    }">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if expenses.pages > 1 %}
+    <div class="card-footer">
+        <nav aria-label="Expense pagination">
+            <ul class="pagination justify-content-center mb-0">
+                {% if expenses.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('expenses.list_expenses', page=expenses.prev_num, category=request.args.get('category'), search=request.args.get('search'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), sort_by=request.args.get('sort_by'), sort_order=request.args.get('sort_order')) }}">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for page_num in expenses.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != expenses.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('expenses.list_expenses', page=page_num, category=request.args.get('category'), search=request.args.get('search'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), sort_by=request.args.get('sort_by'), sort_order=request.args.get('sort_order')) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">…</span>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if expenses.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('expenses.list_expenses', page=expenses.next_num, category=request.args.get('category'), search=request.args.get('search'), start_date=request.args.get('start_date'), end_date=request.args.get('end_date'), sort_by=request.args.get('sort_by'), sort_order=request.args.get('sort_order')) }}">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="card-body text-center py-5">
+        <i class="fas fa-receipt fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">No expenses found</h4>
+        <p class="text-muted">
+            {% if request.args %}
+                No expenses match your search criteria. Try adjusting your filters.
+            {% else %}
+                Start tracking your expenses to see them here.
+            {% endif %}
+        </p>
+        <a href="{{ url_for('expenses.add_expense') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Your First Expense
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.border-left-primary { border-left: 4px solid var(--bs-primary) !important; }
+.border-left-success { border-left: 4px solid var(--bs-success) !important; }
+.border-left-warning { border-left: 4px solid var(--bs-warning) !important; }
+.border-left-danger { border-left: 4px solid var(--bs-danger) !important; }
+.border-left-info { border-left: 4px solid var(--bs-info) !important; }
+.border-left-secondary { border-left: 4px solid var(--bs-secondary) !important; }
+.border-left-dark { border-left: 4px solid var(--bs-dark) !important; }
+.border-left-light { border-left: 4px solid var(--bs-light) !important; }
+
+.expense-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.expense-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // View toggle functionality
+    const listViewBtn = document.getElementById('list-view');
+    const cardViewBtn = document.getElementById('card-view');
+    const tableContainer = document.getElementById('table-container');
+    const cardContainer = document.getElementById('card-container');
+    
+    if (listViewBtn && cardViewBtn && tableContainer && cardContainer) {
+        listViewBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            tableContainer.style.display = 'block';
+            cardContainer.style.display = 'none';
+            listViewBtn.classList.add('active');
+            cardViewBtn.classList.remove('active');
+            localStorage.setItem('expenseView', 'list');
+        });
+        
+        cardViewBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            tableContainer.style.display = 'none';
+            cardContainer.style.display = 'block';
+            cardViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
+            localStorage.setItem('expenseView', 'card');
+        });
+        
+        // Restore saved view preference
+        const savedView = localStorage.getItem('expenseView');
+        if (savedView === 'list') {
+            tableContainer.style.display = 'block';
+            cardContainer.style.display = 'none';
+            listViewBtn.classList.add('active');
+            cardViewBtn.classList.remove('active');
+        } else {
+            // Default to card view
+            tableContainer.style.display = 'none';
+            cardContainer.style.display = 'block';
+            cardViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
+        }
+    }
+    
+    // Auto-submit form on filter change
+    const categoryFilter = document.querySelector('select[name="category"]');
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', function() {
+            this.closest('form').submit();
+        });
+    }
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Alt + N: Add new expense
+        if (e.altKey && e.key === 'n') {
+            e.preventDefault();
+            window.location.href = "{{ url_for('expenses.add_expense') }}";
+        }
+        
+        // Alt + F: Focus on search
+        if (e.altKey && e.key === 'f') {
+            e.preventDefault();
+            const searchInput = document.querySelector('input[name="search"]');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

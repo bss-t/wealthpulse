@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center">
+    <div>
+        <h2><i class="fas fa-plus-circle text-primary"></i> Add New Expense</h2>
+        <p class="text-muted mb-0">Track your expenses and keep your budget in check</p>
+    </div>
+    <a href="{{ url_for('expenses.list_expenses') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Expenses
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Main Form -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-edit text-primary"></i> Expense Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" novalidate>
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <!-- Amount -->
+                        <div class="col-md-6 mb-3">
+                            {{ form.amount.label(class="form-label fw-bold") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </span>
+                                {{ form.amount(class="form-control" + (" is-invalid" if form.amount.errors else ""), 
+                                              placeholder="0.00", 
+                                              step="0.01",
+                                              min="0") }}
+                                {% if form.amount.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.amount.errors[0] }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Category -->
+                        <div class="col-md-6 mb-3">
+                            {{ form.category_id.label(class="form-label fw-bold") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-tag"></i>
+                                </span>
+                                {{ form.category_id(class="form-select" + (" is-invalid" if form.category_id.errors else "")) }}
+                                {% if form.category_id.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.category_id.errors[0] }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="form-text">
+                                Don't see your category? <a href="{{ url_for('main.add_category') }}">Add a new one</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Title -->
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label fw-bold") }}
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-heading"></i>
+                            </span>
+                            {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else ""), 
+                                         placeholder="e.g., Grocery shopping, Gas bill, etc.") }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.title.errors[0] }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", 
+                                          placeholder="Optional: Add more details about this expense...", 
+                                          rows="3") }}
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Date -->
+                        <div class="col-md-6 mb-3">
+                            {{ form.date.label(class="form-label fw-bold") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-calendar"></i>
+                                </span>
+                                {{ form.date(class="form-control" + (" is-invalid" if form.date.errors else "")) }}
+                                {% if form.date.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.date.errors[0] }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Payment Method -->
+                        <div class="col-md-6 mb-3">
+                            {{ form.payment_method.label(class="form-label") }}
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-credit-card"></i>
+                                </span>
+                                {{ form.payment_method(class="form-select") }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Receipt Upload -->
+                    <div class="mb-4">
+                        {{ form.receipt.label(class="form-label") }}
+                        {{ form.receipt(class="form-control", accept="image/*,.pdf") }}
+                        <div class="form-text">
+                            <i class="fas fa-info-circle"></i> 
+                            Upload receipt image or PDF (max 16MB). Supported formats: JPG, PNG, GIF, PDF
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('expenses.list_expenses') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Quick Tips -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-lightbulb text-warning"></i> Quick Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        Keep receipts for tax deductions
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        Add expenses as soon as possible
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success"></i>
+                        Use descriptive titles for easy searching
+                    </li>
+                    <li class="mb-0">
+                        <i class="fas fa-check text-success"></i>
+                        Categorize correctly for better insights
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Recent Categories -->
+        {% if recent_categories %}
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-history text-info"></i> Recently Used Categories
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    {% for category in recent_categories %}
+                    <span class="badge bg-{{ category.color }} category-badge" 
+                          data-bs-toggle="tooltip" 
+                          title="Click to select this category">
+                        <i class="{{ category.icon }}"></i> {{ category.name }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Budget Alert -->
+        {% if budget_warning %}
+        <div class="alert alert-warning mt-4" role="alert">
+            <h6 class="alert-heading">
+                <i class="fas fa-exclamation-triangle"></i> Budget Alert
+            </h6>
+            <p class="mb-0">{{ budget_warning }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-focus on amount field
+    const amountField = document.querySelector('input[name="amount"]');
+    if (amountField) {
+        amountField.focus();
+    }
+    
+    // Category badge click handlers
+    const categoryBadges = document.querySelectorAll('.category-badge');
+    const categorySelect = document.querySelector('select[name="category_id"]');
+    
+    categoryBadges.forEach(badge => {
+        badge.style.cursor = 'pointer';
+        badge.addEventListener('click', function() {
+            const categoryName = this.textContent.trim();
+            for (let option of categorySelect.options) {
+                if (option.text === categoryName) {
+                    categorySelect.value = option.value;
+                    categorySelect.dispatchEvent(new Event('change'));
+                    break;
+                }
+            }
+        });
+    });
+    
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const amount = parseFloat(document.querySelector('input[name="amount"]').value);
+        const title = document.querySelector('input[name="title"]').value.trim();
+        const category = document.querySelector('select[name="category_id"]').value;
+        
+        if (!amount || amount <= 0) {
+            e.preventDefault();
+            showNotification('Please enter a valid amount', 'danger');
+            return;
+        }
+        
+        if (!title) {
+            e.preventDefault();
+            showNotification('Please enter a title for this expense', 'danger');
+            return;
+        }
+        
+        if (!category) {
+            e.preventDefault();
+            showNotification('Please select a category', 'danger');
+            return;
+        }
+    });
+    
+    // Real-time amount formatting
+    const amountInput = document.querySelector('input[name="amount"]');
+    amountInput.addEventListener('input', function() {
+        let value = this.value.replace(/[^0-9.]/g, '');
+        
+        // Prevent multiple decimal points
+        const parts = value.split('.');
+        if (parts.length > 2) {
+            value = parts[0] + '.' + parts.slice(1).join('');
+        }
+        
+        // Limit to 2 decimal places
+        if (parts[1] && parts[1].length > 2) {
+            value = parts[0] + '.' + parts[1].substring(0, 2);
+        }
+        
+        this.value = value;
+    });
+});
+
+function showNotification(message, type) {
+    if (window.ExpenseManager) {
+        window.ExpenseManager.showNotification(message, type);
+    } else {
+        alert(message);
+    }
+}
+</script>
+{% endblock %}

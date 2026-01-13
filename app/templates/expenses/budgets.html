@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Budgets{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-chart-line text-primary"></i> Budget Management</h2>
+                    <p class="text-muted mb-0">Set and track your spending budgets</p>
+                </div>
+                <a href="{{ url_for('expenses.add_budget') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Budget
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if budgets %}
+    <div class="row">
+        {% for budget in budgets %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-{{ budget.category.color }} text-white">
+                    <h6 class="mb-0">
+                        <i class="{{ budget.category.icon }}"></i> {{ budget.category.name }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <h4>{{ get_currency_symbol() }}{{ "%.0f"|format(budget.spent) }}</h4>
+                        <small class="text-muted">of {{ get_currency_symbol() }}{{ "%.0f"|format(budget.amount) }} budget</small>
+                    </div>
+                    
+                    <div class="progress mb-2" style="height: 10px;">
+                        {% set percentage = (budget.spent / budget.amount * 100) if budget.amount > 0 else 0 %}
+                        <div class="progress-bar {% if percentage > 90 %}bg-danger{% elif percentage > 75 %}bg-warning{% else %}bg-success{% endif %}" 
+                             style="width: {{ [percentage, 100]|min }}%"></div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <small>{{ "%.0f"|format(percentage) }}% used</small>
+                        <small>{{ get_currency_symbol() }}{{ "%.0f"|format(budget.amount - budget.spent) }} remaining</small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="btn-group w-100">
+                        <a href="{{ url_for('expenses.edit_budget', id=budget.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <form method="POST" action="{{ url_for('expenses.delete_budget', id=budget.id) }}" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                    onclick="return confirm('Are you sure?')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Budgets Set</h4>
+                    <p class="text-muted">Create your first budget to start tracking your spending limits.</p>
+                    <a href="{{ url_for('expenses.add_budget') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create First Budget
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

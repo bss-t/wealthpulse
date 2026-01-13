@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="card-title mb-4">
+                    <i class="fas fa-credit-card"></i> {{ 'Edit' if method else 'Add' }} Payment Method
+                </h2>
+                
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Payment Method Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ method.name if method else '' }}" required>
+                        <small class="form-text text-muted">e.g., Cash, Credit Card, UPI, PayPal</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="2">{{ method.description if method else '' }}</textarea>
+                        <small class="form-text text-muted">Optional: Brief description of this payment method</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="icon" class="form-label">Icon</label>
+                        <select class="form-select" id="icon" name="icon">
+                            <option value="fas fa-money-bill-wave" {{ 'selected' if method and method.icon == 'fas fa-money-bill-wave' else '' }}>💵 Cash</option>
+                            <option value="fas fa-credit-card" {{ 'selected' if method and method.icon == 'fas fa-credit-card' else '' }}>💳 Card</option>
+                            <option value="fas fa-mobile-alt" {{ 'selected' if method and method.icon == 'fas fa-mobile-alt' else '' }}>📱 Mobile/UPI</option>
+                            <option value="fas fa-wallet" {{ 'selected' if method and method.icon == 'fas fa-wallet' else '' }}>👛 Wallet</option>
+                            <option value="fas fa-university" {{ 'selected' if method and method.icon == 'fas fa-university' else '' }}>🏦 Bank</option>
+                            <option value="fas fa-qrcode" {{ 'selected' if method and method.icon == 'fas fa-qrcode' else '' }}>🔲 QR Code</option>
+                            <option value="fas fa-paypal" {{ 'selected' if method and method.icon == 'fas fa-paypal' else '' }}>🅿️ PayPal</option>
+                            <option value="fas fa-bitcoin" {{ 'selected' if method and method.icon == 'fas fa-bitcoin' else '' }}>₿ Crypto</option>
+                            <option value="fas fa-check" {{ 'selected' if method and method.icon == 'fas fa-check' else '' }}>✓ Check</option>
+                            <option value="fas fa-ellipsis-h" {{ 'selected' if method and method.icon == 'fas fa-ellipsis-h' else '' }}>⋯ Other</option>
+                        </select>
+                        <small class="form-text text-muted">Choose an icon to represent this payment method</small>
+                    </div>
+                    
+                    <div class="mb-3" id="icon-preview" style="text-align: center; font-size: 3rem; color: #667eea; margin: 20px 0;">
+                        <i class="{{ method.icon if method else 'fas fa-credit-card' }}"></i>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {{ 'Update' if method else 'Add' }} Payment Method
+                        </button>
+                        <a href="{{ url_for('expenses.payment_methods') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('icon').addEventListener('change', function() {
+    const iconClass = this.value;
+    document.querySelector('#icon-preview i').className = iconClass;
+});
+</script>
+{% endblock %}

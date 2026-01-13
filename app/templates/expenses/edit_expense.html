@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Expense{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-predicted {
+        animation: pulse-border 0.6s ease-in-out;
+        transition: border-color 0.3s ease;
+    }
+    
+    @keyframes pulse-border {
+        0%, 100% { border-color: #198754; box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.4); }
+        50% { border-color: #198754; box-shadow: 0 0 0 8px rgba(25, 135, 84, 0); }
+    }
+    
+    #category-prediction {
+        animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-edit text-primary"></i> Edit Expense</h2>
+                    <p class="text-muted mb-0">Update expense details</p>
+                </div>
+                <a href="{{ url_for('expenses.list_expenses') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Expenses
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Expense Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.amount.label(class="form-label") }}
+                                {{ form.amount(class="form-control" + (" is-invalid" if form.amount.errors else ""), 
+                                              placeholder="0.00", step="0.01", min="0") }}
+                                {% if form.amount.errors %}
+                                    <div class="invalid-feedback">{{ form.amount.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.category_id.label(class="form-label") }}
+                                {{ form.category_id(class="form-select" + (" is-invalid" if form.category_id.errors else "")) }}
+                                {% if form.category_id.errors %}
+                                    <div class="invalid-feedback">{{ form.category_id.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.title.label(class="form-label") }}
+                            {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                            {% if form.title.errors %}
+                                <div class="invalid-feedback">{{ form.title.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", rows="3") }}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.date.label(class="form-label") }}
+                                {{ form.date(class="form-control") }}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.payment_method.label(class="form-label") }}
+                                {{ form.payment_method(class="form-select") }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.receipt.label(class="form-label") }}
+                            {{ form.receipt(class="form-control", accept="image/*,.pdf") }}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('expenses.list_expenses') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Real-time category prediction for edit form
+document.addEventListener('DOMContentLoaded', function() {
+    const titleInput = document.querySelector('input[name="title"]');
+    const categorySelectElement = document.querySelector('select[name="category_id"]');
+    let predictionTimeout = null;
+    let lastPredictedText = '';
+    
+    // Create prediction indicator
+    const predictionIndicator = document.createElement('div');
+    predictionIndicator.className = 'form-text text-muted mt-1';
+    predictionIndicator.id = 'category-prediction';
+    predictionIndicator.style.display = 'none';
+    
+    // Insert after the select element's parent
+    if (categorySelectElement && categorySelectElement.parentNode) {
+        categorySelectElement.parentNode.insertBefore(predictionIndicator, categorySelectElement.nextSibling);
+    }
+    
+    titleInput.addEventListener('input', function() {
+        const text = this.value.trim();
+        
+        if (predictionTimeout) {
+            clearTimeout(predictionTimeout);
+        }
+        
+        if (text.length < 3) {
+            predictionIndicator.style.display = 'none';
+            return;
+        }
+        
+        if (text === lastPredictedText) {
+            return;
+        }
+        
+        predictionIndicator.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Predicting...';
+        predictionIndicator.style.display = 'block';
+        predictionIndicator.className = 'form-text text-muted mt-1';
+        
+        predictionTimeout = setTimeout(() => {
+            predictCategory(text);
+        }, 500);
+    });
+    
+    async function predictCategory(text) {
+        try {
+            console.log('Predicting category for:', text);
+            const response = await fetch('{{ url_for("expenses.predict_category") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text })
+            });
+            
+            const data = await response.json();
+            console.log('Prediction response:', data);
+            
+            if (data.success) {
+                lastPredictedText = text;
+                categorySelectElement.value = data.category_id;
+                
+                const methodIcon = data.method === 'ml' ? '🤖' : '💡';
+                const methodText = data.method === 'ml' ? 'ML' : 'Keyword';
+                let confidenceText = data.method === 'ml' && data.confidence > 0 ? ` (${data.confidence}%)` : '';
+                
+                predictionIndicator.innerHTML = `${methodIcon} Suggested: <strong>${data.category_name}</strong> via ${methodText}${confidenceText}`;
+                predictionIndicator.className = 'form-text text-success mt-1';
+                
+                categorySelectElement.classList.add('category-predicted', 'border-success');
+                setTimeout(() => categorySelectElement.classList.remove('category-predicted', 'border-success'), 2000);
+            } else {
+                predictionIndicator.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Prediction error:', error);
+            predictionIndicator.style.display = 'none';
+        }
+    }
+});
+</script>
+{% endblock %}

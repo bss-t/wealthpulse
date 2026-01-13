@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}AI Assistant - WealthPulse{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-10 offset-md-1 col-lg-8 offset-lg-2">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-robot"></i> AI Financial Assistant
+                        <span class="badge bg-success float-end">Online</span>
+                    </h4>
+                </div>
+                <div class="card-body p-0" style="height: 600px; display: flex; flex-direction: column;">
+                    <!-- Chat Messages -->
+                    <div id="chat-messages" class="flex-grow-1 p-4" style="overflow-y: auto; background-color: #f8f9fa;">
+                        <!-- Welcome message -->
+                        <div class="message assistant-message mb-4">
+                            <div class="d-flex align-items-start">
+                                <div class="avatar bg-primary text-white rounded-circle me-2 flex-shrink-0" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="message-content bg-white p-4 rounded shadow-sm" style="max-width: 75%; border: 1px solid #dee2e6; font-size: 1rem; line-height: 1.6; background-color: #e3f2fd !important;">
+                                    <strong class="text-primary" style="font-size: 0.9rem; display: block; margin-bottom: 8px; color: #0d6efd !important;">AI Assistant</strong>
+                                    <p class="mb-2" style="color: #000000;">👋 Hello! I'm your AI financial assistant. I can help you:</p>
+                                    <ul class="mb-2" style="padding-left: 20px; color: #000000;">
+                                        <li style="margin-bottom: 4px;">View and analyze your expenses</li>
+                                        <li style="margin-bottom: 4px;">Check budget status</li>
+                                        <li style="margin-bottom: 4px;">Review investments</li>
+                                        <li style="margin-bottom: 4px;">Get spending summaries</li>
+                                    </ul>
+                                    <p class="mb-0 text-muted small" style="color: #666666 !important;">Type "help" to see all commands, or just ask me anything!</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat history will be loaded here -->
+                        {% if chat_history %}
+                        {% for msg in chat_history %}
+                        <!-- User message -->
+                        <div class="message user-message mb-4">
+                            <div class="d-flex align-items-start justify-content-end">
+                                <div class="message-content p-3 rounded shadow-sm" style="max-width: 75%; background-color: #8B0000; color: #ffffff; border: 1px solid #dee2e6; font-size: 1rem; line-height: 1.6;">
+                                    <strong style="color: #ffffff; font-size: 0.9rem; display: block; margin-bottom: 6px;">You</strong>
+                                    <div style="white-space: pre-wrap; word-wrap: break-word; color: #ffffff;">{{ msg.message }}</div>
+                                </div>
+                                <div class="avatar rounded-circle ms-2 text-white flex-shrink-0" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #8B0000;">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Assistant response -->
+                        {% if msg.response_type == 'image' and msg.image_data %}
+                        <div class="message assistant-message mb-4">
+                            <div class="d-flex align-items-start justify-content-start">
+                                <div class="avatar rounded-circle me-2 text-white flex-shrink-0" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #0d6efd;">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="message-content p-3 rounded shadow-sm" style="max-width: 85%; background-color: #e3f2fd; border: 1px solid #dee2e6;">
+                                    <strong style="color: #0d6efd; font-size: 0.9rem; display: block; margin-bottom: 6px;">AI Assistant</strong>
+                                    <img src="data:image/png;base64,{{ msg.image_data }}" alt="Chart" style="max-width: 100%; height: auto; border-radius: 5px;">
+                                </div>
+                            </div>
+                        </div>
+                        {% elif msg.response %}
+                        <div class="message assistant-message mb-4">
+                            <div class="d-flex align-items-start justify-content-start">
+                                <div class="avatar rounded-circle me-2 text-white flex-shrink-0" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #0d6efd;">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <div class="message-content p-3 rounded shadow-sm" style="max-width: 75%; background-color: #e3f2fd; color: #000000; border: 1px solid #dee2e6; font-size: 1rem; line-height: 1.6;">
+                                    <strong style="color: #0d6efd; font-size: 0.9rem; display: block; margin-bottom: 6px;">AI Assistant</strong>
+                                    <div style="white-space: pre-wrap; word-wrap: break-word; color: #000000;">{{ msg.response }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Input Area -->
+                    <div class="border-top p-3" style="background-color: white;">
+                        <form id="chat-form" class="d-flex gap-2">
+                            <input 
+                                type="text" 
+                                id="user-input" 
+                                class="form-control" 
+                                placeholder="Ask me about your expenses..." 
+                                autocomplete="off"
+                                autofocus
+                            >
+                            <button type="submit" class="btn btn-primary" id="send-btn">
+                                <i class="fas fa-paper-plane"></i> Send
+                            </button>
+                        </form>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <strong>Quick commands:</strong> 
+                                <a href="#" class="quick-command" data-message="Show my recent expenses">Recent expenses</a> • 
+                                <a href="#" class="quick-command" data-message="What's my spending summary?">Summary</a> • 
+                                <a href="#" class="quick-command" data-message="Show me a spending chart">Chart</a> •
+                                <a href="#" class="quick-command" data-message="Budget status">Budget</a> •
+                                <a href="#" class="quick-command" data-message="help">Help</a>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+#chat-messages {
+    scroll-behavior: smooth;
+}
+
+.message {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.user-message .avatar {
+    background-color: #8B0000 !important;
+}
+
+.typing-indicator {
+    display: inline-block;
+}
+
+.typing-indicator span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #999;
+    margin: 0 2px;
+    animation: typing 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-10px); }
+}
+
+.quick-command {
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.quick-command:hover {
+    text-decoration: underline;
+}
+
+pre {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const userInput = document.getElementById('user-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const sendBtn = document.getElementById('send-btn');
+    
+    // Quick commands
+    document.querySelectorAll('.quick-command').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const message = this.getAttribute('data-message');
+            userInput.value = message;
+            chatForm.dispatchEvent(new Event('submit'));
+        });
+    });
+    
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const message = userInput.value.trim();
+        if (!message) return;
+        
+        // Add user message to chat
+        addMessage(message, 'user');
+        userInput.value = '';
+        
+        // Disable input while processing
+        userInput.disabled = true;
+        sendBtn.disabled = true;
+        
+        // Show typing indicator
+        const typingId = addTypingIndicator();
+        
+        try {
+            const response = await fetch('/chat/message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            });
+            
+            // Remove typing indicator
+            removeTypingIndicator(typingId);
+            
+            if (response.redirected) {
+                addMessage('Your session has expired. Please refresh the page and log in again.', 'assistant', true);
+                return;
+            }
+            
+            const data = await response.json();
+            console.log('Response data:', data);
+            
+            if (response.ok) {
+                if (data.image) {
+                    // Display image
+                    addImageMessage(data.image, 'assistant');
+                } else if (data.response) {
+                    addMessage(data.response, 'assistant');
+                } else {
+                    addMessage('Received empty response from server.', 'assistant', true);
+                    console.error('Empty response:', data);
+                }
+            } else {
+                addMessage('Sorry, I encountered an error: ' + (data.error || 'Unknown error'), 'assistant', true);
+            }
+        } catch (error) {
+            removeTypingIndicator(typingId);
+            addMessage('Sorry, I couldn\'t process your request. Please try again.', 'assistant', true);
+            console.error('Error:', error);
+        } finally {
+            userInput.disabled = false;
+            sendBtn.disabled = false;
+            userInput.focus();
+        }
+    });
+    
+    function addMessage(text, sender, isError = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}-message mb-4`;
+        
+        const isUser = sender === 'user';
+        const alignment = isUser ? 'justify-content-end' : 'justify-content-start';
+        const bgColor = isUser ? '#8B0000' : (isError ? '#dc3545' : '#e3f2fd');
+        const textColor = isUser || isError ? '#ffffff' : '#000000';
+        const iconClass = isUser ? 'fa-user' : 'fa-robot';
+        const iconBg = isUser ? '#8B0000' : '#0d6efd';
+        const senderName = isUser ? 'You' : 'AI Assistant';
+        const senderColor = isUser || isError ? '#ffffff' : '#0d6efd';
+        
+        // Format text with line breaks and preserve whitespace
+        const formattedText = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+        
+        messageDiv.innerHTML = `
+            <div class="d-flex align-items-start ${alignment}">
+                ${!isUser ? `
+                <div class="avatar rounded-circle me-2 text-white flex-shrink-0" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: ${iconBg};">
+                    <i class="fas ${iconClass}"></i>
+                </div>
+                ` : ''}
+                <div class="message-content p-3 rounded shadow-sm" style="max-width: 75%; background-color: ${bgColor}; color: ${textColor}; border: 1px solid #dee2e6; font-size: 1rem; line-height: 1.6;">
+                    <strong style="color: ${senderColor}; font-size: 0.9rem; display: block; margin-bottom: 6px;">${senderName}</strong>
+                    <div style="white-space: pre-wrap; word-wrap: break-word; color: ${textColor};">${formattedText}</div>
+                </div>
+                ${isUser ? `
+                <div class="avatar rounded-circle ms-2 text-white flex-shrink-0" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: ${iconBg};">
+                    <i class="fas ${iconClass}"></i>
+                </div>
+                ` : ''}
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function addImageMessage(imageData, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message assistant-message mb-4';
+        
+        messageDiv.innerHTML = `
+            <div class="d-flex align-items-start justify-content-start">
+                <div class="avatar rounded-circle me-2 text-white flex-shrink-0" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background-color: #0d6efd;">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content p-3 rounded shadow-sm" style="max-width: 85%; background-color: #e3f2fd; border: 1px solid #dee2e6;">
+                    <strong style="color: #0d6efd; font-size: 0.9rem; display: block; margin-bottom: 6px;">AI Assistant</strong>
+                    <img src="data:image/png;base64,${imageData}" alt="Chart" style="max-width: 100%; height: auto; border-radius: 5px;">
+                </div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function addTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        const typingId = 'typing-' + Date.now();
+        typingDiv.id = typingId;
+        typingDiv.className = 'message assistant-message mb-3';
+        typingDiv.innerHTML = `
+            <div class="d-flex align-items-start">
+                <div class="avatar bg-primary text-white rounded-circle me-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content bg-white p-3 rounded shadow-sm">
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        `;
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return typingId;
+    }
+    
+    function removeTypingIndicator(typingId) {
+        const typingDiv = document.getElementById(typingId);
+        if (typingDiv) {
+            typingDiv.remove();
+        }
+    }
+});
+</script>
+{% endblock %}
