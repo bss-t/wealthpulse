@@ -1,0 +1,7 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' viewBox='0 0 1200 630'>
+  <rect width='1200' height='630' fill='#0b5cff' />
+  <text x='60' y='120' font-size='48' font-family='Arial' fill='#fff' font-weight='bold'>WealthPulse</text>
+  <text x='60' y='180' font-size='28' font-family='Arial' fill='#fff'>Open-source Expense Manager</text>
+  <rect x='60' y='220' width='540' height='280' rx='8' fill='#fff' opacity='0.06' />
+  <text x='80' y='260' font-size='20' font-family='Arial' fill='#fff'>Track expenses • Attach receipts • Budgets & ML</text>
+</svg>
