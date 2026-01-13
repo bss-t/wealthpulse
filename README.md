@@ -66,5 +66,3 @@ Contributions welcome! Please read `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` (c
 MIT
 
 ---
-
-If you'd like, I can also enable GitHub Pages, add repo topics, and create a `v0.1` release to make the project more discoverable.
