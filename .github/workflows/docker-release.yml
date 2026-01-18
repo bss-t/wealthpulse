@@ -31,5 +31,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/my-app:${{ steps.tag.outputs.VERSION }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/wealthpulse:${{ steps.tag.outputs.VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/wealthpulse:latest
